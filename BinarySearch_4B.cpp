@@ -1,96 +1,124 @@
-#include<iostream>
-#include<vector>
-#include<algorithm>
-#include<stack>
+#include<bits/stdc++.h>
 using namespace std;
 #define maxn 100005
-int m,n;
-vector<int> A[maxn]; //luu dinh ke
-vector<int> B[maxn]; //luu trong so
-int visited[maxn] = {0};
-stack<int> st;
-int parent[maxn];
+#define ll long long
+vector<ll> adj[maxn];
+vector<ll> wt[maxn];
+vector<ll> d(maxn);
+vector<double> D(maxn);
+ll visited[maxn] = {0};
+ll m,n;
+ll MIN = 1e5;
+ll MAX = -1e5;
+vector<ll> Path;
 void inp()
 {
 	cin >> m >> n;
 	for(int i=0; i<n; i++)
 	{
-		int x,y,z;
+		ll x,y;
+		double z;
 		cin >> x >> y >> z;
-		A[x].push_back(y);
-		B[x].push_back(z);
+		adj[x].push_back(y);
+		wt[x].push_back(z);
 	}
+	
 }
-void topoSort(int u)
+topoSort(ll u, stack<ll> &st)
 {
 	visited[u] = 1;
-	for(int i=0; i<A[u].size(); i++)
-		if(visited[ A[u][i] ] == 0)
-			topoSort( A[u][i] );
-	st.push(u); 
+	for(int i=0; i<adj[u].size(); i++)
+		if(visited[ adj[u][i] ] != 1)
+			topoSort( adj[u][i] , st);
+	st.push(u);
 }
-bool good(double mid)
+void SetDistance(stack<ll> st)
 {
-	vector<double> d(m+1);
-	for(int i=0; i<=m; i++)
+	for(int i=1; i<=m; i++)
 		d[i] = 1e5;
 	d[1] = 0;
-	int cnt = 0;
 	while(!st.empty())
 	{
-		int u = st.top();
+		ll u = st.top();
 		st.pop();
-		cnt++;
-		for(int i=0; i<A[u].size(); i++)
+		for(int i=0; i < adj[u].size(); i++)
 		{
-			int v = A[u][i];
-			int wt = B[u][i];
-			if(v != m && d[v] > d[u] + wt)
+			ll v = adj[u][i];
+			double w = wt[u][i];
+			if(d[u] + w < d[v])
+				d[v] = d[u] + w;
+ 		}
+	}
+}
+bool good(double mid, stack<ll> st)
+{
+	ll parent[maxn];
+	vector<double> dtbc(maxn); //luu trung binh cong
+//	ll cnt[maxn]; // luu so canh cua duong di
+//	cnt[1] = 0;
+	for(int i=1; i<=m; i++)
+		dtbc[i] = 1e5;
+	dtbc[1] = 0;
+	while(!st.empty())
+	{
+		ll u = st.top();
+		st.pop();
+		for(int i=0; i<adj[u].size(); i++)
+		{
+			ll v = adj[u][i];
+			ll w = wt[u][i];
+			if(	dtbc[u] + w - mid < dtbc[v] )
 			{
-				d[v] = d[u] + wt;
+				dtbc[v] = dtbc[u] + w - mid;
 				parent[v] = u;
 			}
-			else
-				if(v == m && ((d[u] + wt) / cnt) < d[v] )
-				{
-					d[m] = (d[u] + wt)/cnt;
-					cnt = 1;
-					parent[m] = u;
-				}
 		}
 	}
-	if(d[m] - mid <= 0)
+	if(dtbc[m] <= 0)
+	{
+		Path.clear();
+		D.clear();
+		ll t = m;
+		while(t != 1)
+		{
+			Path.push_back(t);
+			t = parent[t];
+		}
+		Path.push_back(1);
+		reverse(Path.begin(), Path.end());
+		
+		for(int i=1; i<=m; i++)
+			D[i] = dtbc[i];
+		
 		return true;
+	}
 	else
 		return false;
 }
 int main()
 {
+	stack<ll> st;
 	inp();
-	for(int i=1; i<=m; i++)
-		if(visited[i] == 0)
-			topoSort(i);
-			
-	double l = 0;
-	double r = 200;
-	for(int i=0; i<200; i++)
+	topoSort(1,st); // tim thu tu topo
+	SetDistance(st); // tim khoang cach ngan nhat binh thuong
+	double l = -1;
+	double r = 101;
+	for(int i=0; i<150; i++)
 	{
 		double mid = (l + r)/2;
-		if(good(mid))
-			r = mid; // update mid to be minimum
+		if(good(mid,st))
+			r = mid;
 		else
 			l = mid;
 	}
-	vector<int> path;
-	while(m != 1)
-	{
-		path.push_back(m);
-		m = parent[m];
-	}
-	path.push_back(1);
-	reverse(path.begin(), path.end());
-	cout << path.size() - 1 << endl;
-	for(int i=0; i<path.size(); i++)
-		cout << path[i] << " ";
+//	cout << r << endl;
+	cout << Path.size() - 1 << endl;
+	for(int i=0; i<Path.size(); i++)
+		cout << Path[i] << " ";
+//	cout << endl;
+//	for(int i=1; i<=m; i++)
+//		cout << D[i] << " ";
 	
-} 
+	
+	
+}
